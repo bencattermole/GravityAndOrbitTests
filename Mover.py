@@ -38,3 +38,39 @@ class Mover:
         color = (255, 255, 255)
 
         pygame.draw.circle(screen, color, (self.pos.x, self.pos.y), self.size, 2)
+
+
+class Pulsar(Mover):
+    def __init__(self, position, velocity, acceleration, size, angle, angular_velcity):
+        Mover.__init__(self, position, velocity, acceleration, size)
+        self.ang = angle
+        self.ang_vel = angular_velcity
+        self.line_len = 2000
+        self.rot_x = 0
+        self.rot_y = 0
+        self.einstein_delay = 10
+
+    def rotate(self):
+        if self.ang == 360:
+            self.ang = 0
+        else:
+            self.ang += 0.02
+
+        self.rot_x = self.line_len*math.sin(self.ang)
+        self.rot_y = self.line_len*math.cos(self.ang)
+
+    def render_beam(self, screen):
+        self.rotate()
+        pygame.draw.line(screen, (255, 255, 255), (self.pos.x, self.pos.y), (self.pos.x + self.rot_x, self.pos.y + self.rot_y))
+        pygame.draw.line(screen, (255, 255, 255), (self.pos.x, self.pos.y), (self.pos.x - self.rot_x, self.pos.y - self.rot_y))
+
+        test_rot = Vector.Vector(self.rot_x, self.rot_y)
+        test_rot.normalise_this()
+
+        dot = Vector.dot_product(self.vel, test_rot)
+        self.einstein_delay = dot
+
+        # dot is equivlient to doppler shift effect that causes einstein delay
+
+        pygame.draw.line(screen, (255, 0, 0), (self.pos.x, self.pos.y), (self.pos.x + (self.rot_x/50)*-dot, self.pos.y + (self.rot_y/50)*-dot), 3)
+        pygame.draw.line(screen, (0, 0, 255), (self.pos.x, self.pos.y), (self.pos.x + (self.rot_x/50)*dot, self.pos.y + (self.rot_y/50)*dot), 3)

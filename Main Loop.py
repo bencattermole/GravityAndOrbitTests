@@ -33,7 +33,7 @@ vel2 = Vector.Vector(-1, 1)
 accel = Vector.Vector(0, 0)
 accel2 = Vector.Vector(0, 0)
 
-mover = Mover.Mover(pos, vel, accel, 4)
+mover = Mover.Pulsar(pos, vel, accel, 4, 20, 0)
 mover2 = Mover.Mover(pos2, vel2, accel2, 4)
 
 running = True
@@ -46,6 +46,13 @@ scroll = 0.5
 
 '''
 not used stuff
+
+movers have rotation value that increases over time
+we don't have to draw a line to a point just a continous one in the direction of the normal of the vector that is 
+rotating with the mover?
+need to check distance to orbital companion from the line
+
+####
 x, y = pygame.mouse.get_pos()
 
     direction_to_accel = Vector.Vector((x - mover.pos.x), (y - mover.pos.y))
@@ -97,6 +104,8 @@ while running:
 
     mover2.update()
     mover2.render(screen)
+
+    mover.render_beam(screen)
 
     '''
     for points in cast_to:

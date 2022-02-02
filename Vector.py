@@ -35,7 +35,9 @@ def normalise_vec(vec):
     new_vec = vec
 
     if m != 0:
+        print(new_vec)
         new_vec = vec.divide(m)
+        print(new_vec)
         return new_vec
     else:
         return new_vec
@@ -54,4 +56,9 @@ def sub_two_vectors(vec1, vec2):
 def multiply_new(vec, n):
     vec2 = Vector((vec.x * n), (vec.y * n))
     return vec2
+
+
+def dot_product(vec1, vec2):
+    dot = (vec1.x * vec2.x) + (vec1.y * vec2.y)
+    return dot
 
