@@ -44,6 +44,35 @@ running = True
 
 scroll = 0.5
 
+
+def shapiro_delay(x1, x2, y1, y2, radius, x_cor, y_cor):
+
+    if x2 - x1 == 0:
+        x2 += 0.000001
+
+    m = (y2-y1)/(x2-x1)
+    c = y1 - m*x1
+
+    A = c - y_cor
+
+    quada = (1 + m*m)
+    quadb = (-2*x_cor + 2*A*m)
+    quadc = (x_cor*x_cor + A*A - radius*radius)
+
+    discrim = quadb*quadb - 4*quada*quadc
+
+    if discrim <= 0:
+        pass
+    else:
+
+        xpos = (-1*quadb + math.sqrt(discrim))/(2*quada)
+        ypos = m*xpos + c
+
+        xneg = (-1*quadb - math.sqrt(discrim))/(2*quada)
+        yneg = m*xneg + c
+
+        pygame.draw.line(screen, (252, 215, 3), (xpos, ypos), (xneg, yneg), 5)
+
 '''
 not used stuff
 
@@ -105,7 +134,13 @@ while running:
     mover2.update()
     mover2.render(screen)
 
+    #pygame.draw.circle(screen, (255, 255, 100), (mover2.pos.x, mover2.pos.y), 100, 2)
+
     mover.render_beam(screen)
+
+    shapiro_delay(mover.pos.x, (mover.pos.x + mover.rot_x), mover.pos.y, (mover.pos.y + mover.rot_y), 100,
+                       mover2.pos.x,
+                       mover2.pos.y)
 
     '''
     for points in cast_to:
