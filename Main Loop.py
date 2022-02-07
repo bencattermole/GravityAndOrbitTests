@@ -52,14 +52,18 @@ scroll = 0.5
 line_draw_x = [22]
 line_draw_y = [929]
 
+pulses_info = [[0, 0, 0]]
 
-def graph_draw(detection, line_to_draw_y, line_to_draw_x, intensity):
+
+def graph_draw(detection, line_to_draw_y, line_to_draw_x, intensity, e_delay, s_delay):
 
     if line_to_draw_x[-1] == 1004:
         line_to_draw_x.clear()
         line_to_draw_x.append(22)
         line_to_draw_y.clear()
         line_to_draw_y.append(929)
+        pulses_info.clear()
+        pulses_info.append([0, 0, 0])
 
     if detection:
         # print(intensity)
@@ -81,11 +85,19 @@ def graph_draw(detection, line_to_draw_y, line_to_draw_x, intensity):
                 pygame.draw.line(screen, (0, 0, 0), (line_to_draw_x[n], line_to_draw_y[n]), (line_to_draw_x[n - 1], line_to_draw_y[n - 1]), 1)
                 draw_circle = False
 
+        if detection:
+            if line_to_draw_y[n] != 929 and line_to_draw_y[n-1] == 929:
+                if line_to_draw_x[n] != pulses_info[-1][2]:
+                    e_delay = int(e_delay*100)/100
+                    s_delay = int(s_delay * 100) / 100
+                    new_pulse = [e_delay, s_delay, line_to_draw_x[n]]
+                    pulses_info.append(new_pulse)
+
         if draw_circle:
             pygame.draw.circle(screen, (0, 0, 0), (line_to_draw_x[n], line_to_draw_y[n]), 1, 1)
 
 
-def graph_pulse(x1, x2, y1, y2, radius, x_cor, y_cor):
+def graph_pulse(x1, x2, y1, y2, radius, x_cor, y_cor, e_delay, s_delay):
 
     if x2 - x1 == 0:
         x2 += 0.000001
@@ -102,7 +114,7 @@ def graph_pulse(x1, x2, y1, y2, radius, x_cor, y_cor):
     discrim = quadb*quadb - 4*quada*quadc
 
     if discrim <= 0:
-        graph_draw(False, line_draw_y, line_draw_x, 1)
+        graph_draw(False, line_draw_y, line_draw_x, 1, e_delay, s_delay)
         pass
     else:
 
@@ -113,7 +125,7 @@ def graph_pulse(x1, x2, y1, y2, radius, x_cor, y_cor):
         yneg = m*xneg + c
 
         distance = math.sqrt((xpos - xneg)**2 + (ypos - yneg)**2)
-        graph_draw(True, line_draw_y, line_draw_x, distance)
+        graph_draw(True, line_draw_y, line_draw_x, distance, e_delay, s_delay)
 
 
 def shapiro_delay(x1, x2, y1, y2, radius, x_cor, y_cor):
@@ -133,7 +145,7 @@ def shapiro_delay(x1, x2, y1, y2, radius, x_cor, y_cor):
     discrim = quadb*quadb - 4*quada*quadc
 
     if discrim <= 0:
-        pass
+        return 0
     else:
 
         xpos = (-1*quadb + math.sqrt(discrim))/(2*quada)
@@ -142,7 +154,9 @@ def shapiro_delay(x1, x2, y1, y2, radius, x_cor, y_cor):
         xneg = (-1*quadb - math.sqrt(discrim))/(2*quada)
         yneg = m*xneg + c
 
+        distance = math.sqrt((xpos - xneg) ** 2 + (ypos - yneg) ** 2)
         pygame.draw.line(screen, (252, 215, 3), (xpos, ypos), (xneg, yneg), 5)
+        return distance
 
 
 while running:
@@ -183,9 +197,9 @@ while running:
     mover2.update()
     mover2.render(screen)
 
-    mover.render_beam(screen)
+    e_delay = mover.render_beam(screen)
 
-    shapiro_delay(mover.pos.x, (mover.pos.x + mover.rot_x), mover.pos.y, (mover.pos.y + mover.rot_y), 100, mover2.pos.x, mover2.pos.y)
+    s_delay = shapiro_delay(mover.pos.x, (mover.pos.x + mover.rot_x), mover.pos.y, (mover.pos.y + mover.rot_y), 100, mover2.pos.x, mover2.pos.y)
 
     pygame.draw.rect(screen, (255, 252, 250), (0, 829, 1024, 1024), 128)
     pygame.draw.line(screen, (0, 0, 0), (20, 839), (20, 939), 2)
@@ -196,12 +210,20 @@ while running:
     screen.blit(label_y, (1, 889))
     screen.blit(label_x, (492, 940))
 
-    graph_pulse(mover.pos.x, (mover.pos.x + mover.rot_x), mover.pos.y, (mover.pos.y + mover.rot_y), 15, 80, 80)
+    graph_pulse(mover.pos.x, (mover.pos.x + mover.rot_x), mover.pos.y, (mover.pos.y + mover.rot_y), 15, 80, 80, abs(e_delay), s_delay)
 
-    '''
-    for points in cast_to:
-        rect2 = pygame.rect.Rect((points[0] * block_size, points[1] * block_size, block_size, block_size))
-        pygame.draw.rect(screen, WHITE, rect2)
-    '''
+    pulse_id = []
+    for pulse in pulses_info:
+        if pulse == [0, 0, 0]:
+            pass
+        elif pulse[2] not in pulse_id:
+            einstien_text_delay = myfont.render(f"E delay: {pulse[0]}", 1, (0, 0, 0))
+            shapiro_text_delay = myfont.render(f"S delay: {pulse[1]}", 1, (0, 0, 0))
+            screen.blit(einstien_text_delay, (pulse[2], 960))
+            pygame.draw.rect(screen, (255, 0, 0), (pulse[2] - 16, 964, 8, 16), 4)
+            pygame.draw.rect(screen, (0, 0, 255), (pulse[2] - 8, 964, 8, 16), 4)
+            screen.blit(shapiro_text_delay, (pulse[2], 980))
+            pygame.draw.rect(screen, (252, 215, 3), (pulse[2] - 16, 983, 16, 16), 8)
+            pulse_id.append(pulse[2])
 
     clock.tick(30)

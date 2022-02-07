@@ -74,3 +74,5 @@ class Pulsar(Mover):
 
         pygame.draw.line(screen, (255, 0, 0), (self.pos.x, self.pos.y), (self.pos.x + (self.rot_x/50)*-dot, self.pos.y + (self.rot_y/50)*-dot), 3)
         pygame.draw.line(screen, (0, 0, 255), (self.pos.x, self.pos.y), (self.pos.x + (self.rot_x/50)*dot, self.pos.y + (self.rot_y/50)*dot), 3)
+
+        return self.einstein_delay
