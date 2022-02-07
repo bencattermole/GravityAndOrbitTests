@@ -2,7 +2,7 @@ import math
 import Vector
 import pygame
 
-# Gravitational constant, kept as 1 for simplicity could change
+# Gravitational constant, kept as 100 for simplicity could change
 G = 100
 
 
