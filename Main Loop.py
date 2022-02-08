@@ -4,6 +4,7 @@ import Vector
 import random
 import math
 import time
+import NeuralNetwork
 
 Screen_Size = 1024
 block_size = 4
@@ -25,6 +26,12 @@ label_y = myfont.render("I.", 1, (0, 0, 0))
 label_x = myfont.render("Time", 1, (0, 0, 0))
 
 '''
+KNOWN GLITCH
+ - shapiro delay will still be counted even if it influences the beam that is facing away from the observer at the
+   time of crossing
+   - i have implemented a fix, it worked in one case but then happened again, just a matter of fine tuning but a more
+     proper fix would be to look at the vectors of it js
+
 variables below are for the setup of the orbit between the two 'movers'
     - note these values are not the best as they ARE NOT based on simply keplers laws calculations but I am keeping them
       as the shape of orbit they produce is in my opinion nicer, if I ever add orbital decay and gravitational waves 
@@ -54,8 +61,23 @@ line_draw_y = [929]
 
 pulses_info = [[0, 0, 0]]
 
+num_of_reset = [0]
+previous_prediction = [0]
+current_prediction = [0]
+
+n_one = NeuralNetwork.Neuron(2)
+n_two = NeuralNetwork.Neuron(2)
+n_three = NeuralNetwork.Neuron(2)
+
+neurons = [n_one, n_two, n_three]
+
+p = NeuralNetwork.Predictor(3)
+
+network = NeuralNetwork.Network(neurons, p)
+
 
 def graph_draw(detection, line_to_draw_y, line_to_draw_x, intensity, e_delay, s_delay):
+    offset = -22 + 950 * num_of_reset[0]
 
     if line_to_draw_x[-1] == 1004:
         line_to_draw_x.clear()
@@ -64,10 +86,18 @@ def graph_draw(detection, line_to_draw_y, line_to_draw_x, intensity, e_delay, s_
         line_to_draw_y.append(929)
         pulses_info.clear()
         pulses_info.append([0, 0, 0])
+        num_of_reset[0] = num_of_reset[0] + 1
 
     if detection:
         # print(intensity)
         line_to_draw_y.append(929 - intensity*2)
+        if not network.last_four_pulses:
+            network.alert_pulse((line_draw_x[-1] + offset))
+        elif abs(network.last_four_pulses[-1] - (line_draw_x[-1] + offset)) < 30:
+            pass
+        else:
+            network.alert_pulse((line_draw_x[-1] + offset))
+
     else:
         line_to_draw_y.append(929)
 
@@ -154,7 +184,10 @@ def shapiro_delay(x1, x2, y1, y2, radius, x_cor, y_cor):
         xneg = (-1*quadb - math.sqrt(discrim))/(2*quada)
         yneg = m*xneg + c
 
-        distance = math.sqrt((xpos - xneg) ** 2 + (ypos - yneg) ** 2)
+        if yneg > 600 or ypos > 600:
+            distance = 0
+        else:
+            distance = math.sqrt((xpos - xneg) ** 2 + (ypos - yneg) ** 2)
         pygame.draw.line(screen, (252, 215, 3), (xpos, ypos), (xneg, yneg), 5)
         return distance
 
@@ -212,6 +245,7 @@ while running:
 
     graph_pulse(mover.pos.x, (mover.pos.x + mover.rot_x), mover.pos.y, (mover.pos.y + mover.rot_y), 15, 80, 80, abs(e_delay), s_delay)
 
+
     pulse_id = []
     for pulse in pulses_info:
         if pulse == [0, 0, 0]:
@@ -225,5 +259,22 @@ while running:
             screen.blit(shapiro_text_delay, (pulse[2], 980))
             pygame.draw.rect(screen, (252, 215, 3), (pulse[2] - 16, 983, 16, 16), 8)
             pulse_id.append(pulse[2])
+
+    if network.current_prediction != 0:
+        has_changed = False
+        dummy_val = 0
+        pygame.draw.line(screen, (0, 0, 255), ((pulses_info[-1][2] + network.current_prediction), 939), ((pulses_info[-1][2] + network.current_prediction), 839), 2)
+        if network.current_prediction != current_prediction[0]:
+            if current_prediction[0] == 0 or pulses_info[-1][2] == 0:
+                previous_prediction[0] = 0
+            else:
+                previous_prediction[0] = pulses_info[-2][2] + current_prediction[0]
+
+            current_prediction[0] = network.current_prediction
+            has_changed = True
+
+        pygame.draw.line(screen, (64, 233, 255), ((previous_prediction[0]), 939),((previous_prediction[0]), 839), 2)
+
+
 
     clock.tick(30)
